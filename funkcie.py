@@ -11,7 +11,7 @@ abbrev = {'Slovakia': 'SK', 'Poland': 'PL', 'Czechia': 'CZ', 'Hungary': 'HU'}
 geo = json.load(open('converted_simp2.geojson','r'))
 
 unemp = gp.read_file('converted_simp2.geojson', read_geometry=False)
-unemp = unemp[['lau', 'name', 'registered_unemployed', 'Y15-64']]
+unemp = unemp[['lau', 'name', 'registered_unemployed', 'Y15-64','population_density']]
 unemp = pl.from_pandas(unemp)
 unemp = unemp.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
 
@@ -45,18 +45,22 @@ def get_country_unemp_history(cstr):
 
 h_pars = {k: get_country_unemp_history(k) for k in g_pars.keys()}
     
-def plot_map(cstr):
+def plot_map(cstr, column='perc_unemp'):
     geo_c, unemp_c = u_pars[cstr]
-    nmax = 1.1 * unemp_c['perc_unemp'].max()
+    lab_dict = {'perc_unemp': 'Unemp. %', 'population_density': 'Pop. dens.'}
+    nmax = 1.1 * unemp_c[column].max()
+    nmin = 1.1 * unemp_c[column].min()
+    if column == 'population_density':
+        nmax = nmax / 6
     fig = px.choropleth_map(unemp_c, geojson=geo_c, locations='lau', featureidkey="properties.lau", 
-                         color='perc_unemp', map_style="carto-positron", center = g_pars[cstr]['center'],
+                         color=column, map_style="carto-positron", center = g_pars[cstr]['center'],
                          color_continuous_scale="sunset", zoom=g_pars[cstr]['zoom'],
-                         range_color=(0, nmax), labels={'perc_unemp': 'Nezam. %'}
+                         range_color=(nmin, nmax), labels={column: lab_dict[column]}
                         )
     fig.update_layout(margin={"r":0,"t":25,"l":0,"b":0}, width=g_pars[cstr]['w'], height=g_pars[cstr]['h'])
-    fig.update_traces(customdata=np.stack((unemp_c['name'],unemp_c['perc_unemp']), axis=1), hovertemplate=(
+    fig.update_traces(customdata=np.stack((unemp_c['name'],unemp_c[column]), axis=1), hovertemplate=(
         "<b>Region: %{customdata[0]}</b><br>"+\
-        "Perc. of unemployment: %{customdata[1]}"))
+        "Value: %{customdata[1]}"))
     return fig
 
 def plot_uhist(cstr, rstr):

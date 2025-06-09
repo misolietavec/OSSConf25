@@ -35,18 +35,21 @@ def _():
 
 
 @app.cell
-def _(countries_choice, mo, plot_map):
-    _cstr = countries_choice.value
-    _fig = plot_map(_cstr)
-    tab_map = mo.vstack([mo.md('<center><h3>Miera nezamestnanosti v percentách</h3></center>'), countries_choice, mo.ui.plotly(_fig)])
-    return (tab_map,)
-
-
-@app.cell
 def _(mo):
     abbrev = {'Slovakia': 'SK', 'Poland': 'PL', 'Czechia': 'CZ', 'Hungary': 'HU'}
     countries_choice = mo.ui.dropdown(options=abbrev, value='Slovakia', label='Výber krajiny: ')
-    return (countries_choice,)
+    valmap_choice = mo.ui.radio(options={'Unemployment (%)':'perc_unemp', 'Pop. density':'population_density'}, 
+                                value='Unemployment (%)', inline=True, label='Value to plot: ')
+    return countries_choice, valmap_choice
+
+
+@app.cell
+def _(countries_choice, mo, plot_map, valmap_choice):
+    _cstr = countries_choice.value
+    _vstr = valmap_choice.value
+    _fig = plot_map(_cstr, _vstr)
+    tab_map = mo.vstack([mo.md('<center><h3>Miera nezamestnanosti v percentách a hustota populácie</h3></center>'), countries_choice, valmap_choice, mo.ui.plotly(_fig)])
+    return (tab_map,)
 
 
 @app.cell
