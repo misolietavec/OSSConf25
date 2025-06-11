@@ -17,21 +17,21 @@ import marimo
 __generated_with = "0.13.15"
 app = marimo.App(
     width="medium",
-    app_title="Mapy nezamestnanosti",
+    app_title="Nezamestnanosť V4",
     sql_output="native",
 )
 
 
 @app.cell
 def _():
-    import marimo as mo
-    return (mo,)
+    from funkcie import plot_map, plot_uhist, h_pars, plot_phist
+    return h_pars, plot_map, plot_phist, plot_uhist
 
 
 @app.cell
 def _():
-    from funkcie import plot_map, plot_uhist, h_pars
-    return h_pars, plot_map, plot_uhist
+    import marimo as mo
+    return (mo,)
 
 
 @app.cell
@@ -70,8 +70,16 @@ def _(countries_choice, mo, plot_uhist, regions_choice):
 
 
 @app.cell
-def _(mo, tab_history, tab_map):
-    tabs = mo.ui.tabs({"Nezamestnanosť na mape": tab_map, "História po regiónoch": tab_history}, lazy=True)
+def _(countries_choice, mo, plot_phist, regions_choice):
+    _p_hist = plot_phist(countries_choice.value, regions_choice.value)
+    _nadpis = mo.md(f'<center><h3>Vývoj populácie</h3></center>')
+    tab_pop = mo.vstack([_nadpis, mo.hstack([countries_choice, regions_choice], justify='center', gap=5), _p_hist])
+    return (tab_pop,)
+
+
+@app.cell
+def _(mo, tab_history, tab_map, tab_pop):
+    tabs = mo.ui.tabs({"Nezamestnanosť na mape": tab_map, "História po regiónoch": tab_history, 'Demografický vývoj po regiónoch': tab_pop})
     return (tabs,)
 
 

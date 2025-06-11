@@ -3,6 +3,7 @@ import json
 import geopandas as gp
 import polars as pl
 import plotly.express as px
+import plotly.graph_objects as go
 import numpy as np
 
 
@@ -44,12 +45,25 @@ def get_country_unemp_history(cstr):
     return unemp_hc
 
 h_pars = {k: get_country_unemp_history(k) for k in g_pars.keys()}
+
+
+def get_country_pop_history(cstr):
+    if not cstr in g_pars.keys():
+        return   
+    pop_hist = pl.read_csv('lau1-population-iz.csv', 
+                            columns=["period", "lau", "name", "gender", "TOTAL"])
+    pop_hc = pop_hist.filter(pl.col('lau').str.starts_with(cstr))
+    return pop_hc
+
+
+p_pars = {k: get_country_pop_history(k) for k in g_pars.keys()}
     
+
 def plot_map(cstr, column='perc_unemp'):
     geo_c, unemp_c = u_pars[cstr]
     lab_dict = {'perc_unemp': 'Unemp. %', 'population_density': 'Pop. dens.'}
     nmax = 1.1 * unemp_c[column].max()
-    nmin = 1.1 * unemp_c[column].min()
+    nmin = 0.9 * unemp_c[column].min()
     if column == 'population_density':
         nmax = nmax / 6
     fig = px.choropleth_map(unemp_c, geojson=geo_c, locations='lau', featureidkey="properties.lau", 
@@ -70,4 +84,17 @@ def plot_uhist(cstr, rstr):
     r_hist = r_hist.sort(by='period')
     ugr = px.line(r_hist, x='period', y='perc_unemp', markers=False, width=900, height=450)
     ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
+    return ugr
+
+
+def plot_phist(cstr, rstr):
+    p_hist = p_pars[cstr].sort(by='period')
+    fem_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'females'))['period', 'TOTAL']\
+                          .rename({'TOTAL': 'femcount'})
+    mal_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'males'))['period', 'TOTAL']\
+                          .rename({'TOTAL': 'malecount'})
+    all_df = fem_df.join(mal_df, on='period').sort(by='period')
+    all_df = all_df.with_columns((pl.col('malecount') + pl.col('femcount')).alias('totcount'))
+    ugr = px.line(all_df, x='period', y=['malecount', 'femcount'], markers=False, width=900, height=450)
+    # ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
     return ugr
