@@ -91,10 +91,16 @@ def plot_phist(cstr, rstr):
     p_hist = p_pars[cstr].sort(by='period')
     fem_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'females'))['period', 'TOTAL']\
                           .rename({'TOTAL': 'femcount'})
-    mal_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'males'))['period', 'TOTAL']\
+    if cstr != "HU":
+        mal_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'males'))['period', 'TOTAL']\
                           .rename({'TOTAL': 'malecount'})
-    all_df = fem_df.join(mal_df, on='period').sort(by='period')
-    all_df = all_df.with_columns((pl.col('malecount') + pl.col('femcount')).alias('totcount'))
+        all_df = fem_df.join(mal_df, on='period').sort(by='period')
+        all_df = all_df.with_columns((pl.col('malecount') + pl.col('femcount')).alias('totcount'))
+    else:
+        tot_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'total'))['period', 'TOTAL']\
+                          .rename({'TOTAL': 'totcount'})
+        all_df = fem_df.join(tot_df, on='period').sort(by='period')
+        all_df = all_df.with_columns((pl.col('totcount') - pl.col('femcount')).alias('malecount'))    
     ugr = px.line(all_df, x='period', y=['malecount', 'femcount'], markers=False, width=900, height=450)
     # ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
-    return ugr
+    return ugr, all_df
