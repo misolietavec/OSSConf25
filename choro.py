@@ -24,7 +24,7 @@ app = marimo.App(
 
 @app.cell
 def _():
-    from funkcie import plot_map, plot_uhist, h_pars, plot_phist
+    from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars
     return h_pars, plot_map, plot_phist, plot_uhist
 
 
@@ -71,7 +71,7 @@ def _(countries_choice, mo, plot_uhist, regions_choice):
 
 @app.cell
 def _(countries_choice, mo, plot_phist, regions_choice):
-    _p_hist = plot_phist(countries_choice.value, regions_choice.value)
+    _p_hist, _all_df = plot_phist(countries_choice.value, regions_choice.value)
     _nadpis = mo.md(f'<center><h3>Vývoj populácie</h3></center>')
     tab_pop = mo.vstack([_nadpis, mo.hstack([countries_choice, regions_choice], justify='center', gap=5), _p_hist])
     return (tab_pop,)
