@@ -99,7 +99,7 @@ def _(mo, sk_reg_choice, sk_unpic):
 @app.cell
 def _(data_reg, mo, px, reg_slider, sk_reg_choice):
     act_graph = px.line(data_reg[reg_slider.value], x='ages', y=['males', 'femes'], markers=False, width=900, height=450)
-    tab_veksklad = mo.vstack([mo.hstack([sk_reg_choice, reg_slider]), act_graph])
+    tab_veksklad = mo.vstack([mo.hstack([sk_reg_choice, reg_slider],justify='center', gap=5), act_graph])
     return (tab_veksklad,)
 
 
