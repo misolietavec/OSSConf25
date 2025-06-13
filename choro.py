@@ -24,8 +24,10 @@ app = marimo.App(
 
 @app.cell
 def _():
+    import pickle
     from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars
-    return h_pars, plot_map, plot_phist, plot_uhist
+    import plotly.express as px
+    return h_pars, pickle, plot_map, plot_phist, plot_uhist, px
 
 
 @app.cell
@@ -78,8 +80,32 @@ def _(countries_choice, mo, plot_phist, regions_choice):
 
 
 @app.cell
-def _(mo, tab_history, tab_map, tab_pop):
-    tabs = mo.ui.tabs({"Nezamestnanosť na mape": tab_map, "História po regiónoch": tab_history, 'Demografický vývoj po regiónoch': tab_pop})
+def _(h_pars, mo, pickle):
+    sk_unpic = pickle.load(open('sk_data.pickle','rb'))
+    _c_regs = h_pars['SK']
+    _regions = {k:v for k,v in zip(_c_regs['name'], _c_regs['lau'])}
+    sk_reg_choice = mo.ui.dropdown(options=_regions, allow_select_none=False, searchable=True, value=_c_regs['name'][0], label="Výber regiónu, SK: ")
+    return sk_reg_choice, sk_unpic
+
+
+@app.cell
+def _(mo, sk_reg_choice, sk_unpic):
+    data_reg = sk_unpic[sk_reg_choice.value]
+    years = sorted(list(data_reg.keys()))
+    reg_slider = mo.ui.slider(start=years[0], stop=years[-1], step=1, show_value=True)
+    return data_reg, reg_slider
+
+
+@app.cell
+def _(data_reg, mo, px, reg_slider, sk_reg_choice):
+    act_graph = px.line(data_reg[reg_slider.value], x='ages', y=['males', 'femes'], markers=False, width=900, height=450)
+    tab_veksklad = mo.vstack([mo.hstack([sk_reg_choice, reg_slider]), act_graph])
+    return (tab_veksklad,)
+
+
+@app.cell
+def _(mo, tab_history, tab_map, tab_pop, tab_veksklad):
+    tabs = mo.ui.tabs({"Nezamestnanosť na mape": tab_map, "História po regiónoch": tab_history, 'Demografický vývoj po regiónoch': tab_pop, "Veková skladba, regiony SK": tab_veksklad})
     return (tabs,)
 
 
