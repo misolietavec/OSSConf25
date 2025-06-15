@@ -7,8 +7,6 @@ import plotly.graph_objects as go
 import numpy as np
 
 
-abbrev = {'Slovakia': 'SK', 'Poland': 'PL', 'Czechia': 'CZ', 'Hungary': 'HU'}
-
 geo = json.load(open('converted_simp2.geojson','r'))
 
 unemp = gp.read_file('converted_simp2.geojson', read_geometry=False)
@@ -61,7 +59,7 @@ p_pars = {k: get_country_pop_history(k) for k in g_pars.keys()}
 
 def plot_map(cstr, column='perc_unemp'):
     geo_c, unemp_c = u_pars[cstr]
-    lab_dict = {'perc_unemp': 'Unemp. %', 'population_density': 'Pop. dens.'}
+    lab_dict = {'perc_unemp': 'Nezamestnanosť %', 'population_density': 'Hustota obyvateľstva'}
     nmax = 1.1 * unemp_c[column].max()
     nmin = 0.9 * unemp_c[column].min()
     if column == 'population_density':
@@ -74,7 +72,7 @@ def plot_map(cstr, column='perc_unemp'):
     fig.update_layout(margin={"r":0,"t":25,"l":0,"b":0}, width=g_pars[cstr]['w'], height=g_pars[cstr]['h'])
     fig.update_traces(customdata=np.stack((unemp_c['name'],unemp_c[column]), axis=1), hovertemplate=(
         "<b>Region: %{customdata[0]}</b><br>"+\
-        "Value: %{customdata[1]}"))
+        "Hodnota: %{customdata[1]}"))
     return fig
 
 def plot_uhist(cstr, rstr):
@@ -82,7 +80,9 @@ def plot_uhist(cstr, rstr):
     r_hist = c_hist.filter(pl.col('lau') == rstr)
     r_hist = r_hist.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
     r_hist = r_hist.sort(by='period')
-    ugr = px.line(r_hist, x='period', y='perc_unemp', markers=False, width=900, height=450)
+    ugr = px.line(r_hist, x='period', y='perc_unemp', markers=False, 
+                  labels={'perc_unemp': 'Nezamestnanosť %', 'period': 'Obdobie'},
+                  width=900, height=450)
     ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
     return ugr
 
@@ -90,17 +90,26 @@ def plot_uhist(cstr, rstr):
 def plot_phist(cstr, rstr):
     p_hist = p_pars[cstr].sort(by='period')
     fem_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'females'))['period', 'TOTAL']\
-                          .rename({'TOTAL': 'femcount'})
+                          .rename({'TOTAL': 'ženy'})
     if cstr != "HU":
         mal_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'males'))['period', 'TOTAL']\
-                          .rename({'TOTAL': 'malecount'})
+                          .rename({'TOTAL': 'muži'})
         all_df = fem_df.join(mal_df, on='period').sort(by='period')
-        all_df = all_df.with_columns((pl.col('malecount') + pl.col('femcount')).alias('totcount'))
+        all_df = all_df.with_columns((pl.col('muži') + pl.col('ženy')).alias('totcount'))
     else:
         tot_df = p_hist.filter((pl.col('lau')==rstr) & (pl.col('gender') == 'total'))['period', 'TOTAL']\
                           .rename({'TOTAL': 'totcount'})
         all_df = fem_df.join(tot_df, on='period').sort(by='period')
-        all_df = all_df.with_columns((pl.col('totcount') - pl.col('femcount')).alias('malecount'))    
-    ugr = px.line(all_df, x='period', y=['malecount', 'femcount'], markers=False, width=900, height=450)
+        all_df = all_df.with_columns((pl.col('totcount') - pl.col('ženy')).alias('muži'))    
+    ugr = px.line(all_df, x='period', y=['muži', 'ženy'], markers=False, 
+                  labels = {'period': 'Obdobie', 'value': 'Počet', 'variable': 'Premenná'},
+                  width=900, height=450)
     # ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
     return ugr, all_df
+
+def plot_veksklad(data_reg, year):
+    r_data = data_reg[year].rename({'ages': 'Vek', 'males': "muži", 'femes': "ženy"})
+    act_graph = px.line(r_data, x='Vek', y=['muži', 'ženy'], markers=False,
+                        labels = {'value': 'Počet', 'variable': 'Premenná'},
+                        width=900, height=450)
+    return act_graph

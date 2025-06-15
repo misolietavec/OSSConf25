@@ -25,9 +25,9 @@ app = marimo.App(
 @app.cell
 def _():
     import pickle
-    from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars
+    from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars, plot_veksklad
     import plotly.express as px
-    return h_pars, pickle, plot_map, plot_phist, plot_uhist, px
+    return h_pars, pickle, plot_map, plot_phist, plot_uhist, plot_veksklad
 
 
 @app.cell
@@ -38,10 +38,10 @@ def _():
 
 @app.cell
 def _(mo):
-    abbrev = {'Slovakia': 'SK', 'Poland': 'PL', 'Czechia': 'CZ', 'Hungary': 'HU'}
-    countries_choice = mo.ui.dropdown(options=abbrev, value='Slovakia', label='Výber krajiny: ')
-    valmap_choice = mo.ui.radio(options={'Unemployment (%)':'perc_unemp', 'Pop. density':'population_density'}, 
-                                value='Unemployment (%)', inline=True, label='Value to plot: ')
+    abbrev = {'Slovensko': 'SK', 'Poľsko': 'PL', 'Česko': 'CZ', 'Maďarsko': 'HU'}
+    countries_choice = mo.ui.dropdown(options=abbrev, value='Slovensko', label='Výber krajiny: ')
+    valmap_choice = mo.ui.radio(options={'Nezamestnanosť (%)':'perc_unemp', 'Hustota obyvateľstva':'population_density'}, 
+                                value='Nezamestnanosť (%)', inline=True, label='Premenná: ')
     return countries_choice, valmap_choice
 
 
@@ -92,14 +92,16 @@ def _(h_pars, mo, pickle):
 def _(mo, sk_reg_choice, sk_unpic):
     data_reg = sk_unpic[sk_reg_choice.value]
     years = sorted(list(data_reg.keys()))
-    reg_slider = mo.ui.slider(start=years[0], stop=years[-1], step=1, show_value=True)
+    reg_slider = mo.ui.slider(start=years[0], stop=years[-1], step=1, label='Rok: ', show_value=False,debounce=True, value=years[0])
     return data_reg, reg_slider
 
 
 @app.cell
-def _(data_reg, mo, px, reg_slider, sk_reg_choice):
-    act_graph = px.line(data_reg[reg_slider.value], x='ages', y=['males', 'femes'], markers=False, width=900, height=450)
-    tab_veksklad = mo.vstack([mo.hstack([sk_reg_choice, reg_slider],justify='center', gap=5), act_graph])
+def _(data_reg, mo, plot_veksklad, reg_slider, sk_reg_choice):
+    _reg_valstr = mo.md(f" {reg_slider.value}")
+    _p_plot = plot_veksklad(data_reg, reg_slider.value)
+    _nadpis = mo.md(f'<center><h3>Veková skladba obyvateľstva Slovenska</h3></center>')
+    tab_veksklad = mo.vstack([_nadpis, mo.hstack([sk_reg_choice, reg_slider, _reg_valstr],justify='center', gap=5), _p_plot])
     return (tab_veksklad,)
 
 
@@ -114,7 +116,7 @@ def _(mo):
     nadpis = mo.md(
         """
         ## Nezamestnanosť v krajinách V4
-        ### Aktuálne dáta po regiónoch, história nezamestnanosti, vývoj populácie.
+        ### Aktuálne dáta po regiónoch, história nezamestnanosti, vývoj populácie, veková skladba.
         """
     )
     return (nadpis,)
@@ -122,7 +124,7 @@ def _(mo):
 
 @app.cell
 def _(mo, nadpis, tabs):
-    app = mo.vstack([nadpis, tabs])
+    app = mo.vstack([nadpis, tabs],gap=2.5)
     app
     return
 
