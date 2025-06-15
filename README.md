@@ -6,10 +6,9 @@ This is the repository of materials for the contribution at OSSConf 2025 in
 We use the open datasets from [LAU1 dataset](https://zenodo.org/records/14242424) for
 visualising unemployment and population data in regions of V4 countries.
 
-There are three marimo notebooks:
+There are two marimo notebooks:
 - ```choro.py``` maps and line graphs for LAU1 datasets
 - ```choro_lite.py``` webassambly version of ```choro.py```
-- ```choro_onlymaps.py``` visualisation of unemployment data on maps
 
 and the python file ```funkcie.py ``` with several helper functions used in notebooks.
 
@@ -23,5 +22,7 @@ Edit notebook:
 Run notebook:
 ```marimo run --sandbox choro.py``` (dependencies will be automatically installed in isolated environment).
 
+The web application (running choro.py in read-only mode) can be accessed at
+[feelmath.eu server](https://unemp.feelmath.eu/). 
 
  
