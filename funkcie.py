@@ -3,7 +3,6 @@ import json
 import geopandas as gp
 import polars as pl
 import plotly.express as px
-import plotly.graph_objects as go
 import numpy as np
 
 
@@ -15,9 +14,9 @@ unemp = pl.from_pandas(unemp)
 unemp = unemp.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
 
 g_pars = {'SK': {'center': {"lon": 19.3, "lat": 48.7}, 'zoom': 6, 'w': 750, 'h': 400},
-          'HU': {'center': {"lon": 19.3, "lat": 47.1}, 'zoom': 6, 'w': 750, 'h': 500},
+          'HU': {'center': {"lon": 19.5, "lat": 47.1}, 'zoom': 6, 'w': 780, 'h': 500},
           'PL': {'center': {"lon": 18.9, "lat": 51.9}, 'zoom': 5, 'w': 700, 'h': 500},
-          'CZ': {'center': {"lon": 15.9, "lat": 49.7}, 'zoom': 6, 'w': 750, 'h': 500},
+          'CZ': {'center': {"lon": 15.5, "lat": 49.7}, 'zoom': 6, 'w': 760, 'h': 500},
          }
 
 def get_country_mapdata(cstr):
@@ -59,7 +58,7 @@ p_pars = {k: get_country_pop_history(k) for k in g_pars.keys()}
 
 def plot_map(cstr, column='perc_unemp'):
     geo_c, unemp_c = u_pars[cstr]
-    lab_dict = {'perc_unemp': 'Nezamestnanosť %', 'population_density': 'Hustota obyvateľstva'}
+    lab_dict = {'perc_unemp': 'Nezamestnanosť', 'population_density': 'Hustota'}
     nmax = 1.1 * unemp_c[column].max()
     nmin = 0.9 * unemp_c[column].min()
     if column == 'population_density':
@@ -69,7 +68,10 @@ def plot_map(cstr, column='perc_unemp'):
                          color_continuous_scale="sunset", zoom=g_pars[cstr]['zoom'],
                          range_color=(nmin, nmax), labels={column: lab_dict[column]}
                         )
-    fig.update_layout(margin={"r":0,"t":25,"l":0,"b":0}, width=g_pars[cstr]['w'], height=g_pars[cstr]['h'])
+    width = g_pars[cstr]['w']
+    if column == 'population_density':
+        width = width - 25                     
+    fig.update_layout(margin={"r":0,"t":25,"l":0,"b":0}, width=width, height=g_pars[cstr]['h'])
     fig.update_traces(customdata=np.stack((unemp_c['name'],unemp_c[column]), axis=1), hovertemplate=(
         "<b>Region: %{customdata[0]}</b><br>"+\
         "Hodnota: %{customdata[1]}"))
@@ -104,7 +106,6 @@ def plot_phist(cstr, rstr):
     ugr = px.line(all_df, x='period', y=['muži', 'ženy'], markers=False, 
                   labels = {'period': 'Obdobie', 'value': 'Počet', 'variable': 'Premenná'},
                   width=900, height=450)
-    # ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
     return ugr, all_df
 
 def plot_veksklad(data_reg, year):

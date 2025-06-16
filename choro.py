@@ -99,9 +99,9 @@ def _(mo, sk_reg_choice, sk_unpic):
 @app.cell
 def _(data_reg, mo, plot_veksklad, reg_slider, sk_reg_choice):
     _reg_valstr = mo.md(f" {reg_slider.value}")
-    _p_plot = plot_veksklad(data_reg, reg_slider.value)
+    p_plot = plot_veksklad(data_reg, reg_slider.value)
     _nadpis = mo.md(f'<center><h3>Veková skladba obyvateľstva Slovenska</h3></center>')
-    tab_veksklad = mo.vstack([_nadpis, mo.hstack([sk_reg_choice, reg_slider, _reg_valstr],justify='center', gap=5), _p_plot])
+    tab_veksklad = mo.vstack([_nadpis, mo.hstack([sk_reg_choice, reg_slider, _reg_valstr],justify='center', gap=5), p_plot])
     return (tab_veksklad,)
 
 
