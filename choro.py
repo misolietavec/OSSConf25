@@ -21,23 +21,18 @@ app = marimo.App(
     sql_output="native",
 )
 
-
-@app.cell
-def _():
+with app.setup:
+    import locale
     import pickle
     from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars, plot_veksklad
     import plotly.express as px
-    return h_pars, pickle, plot_map, plot_phist, plot_uhist, plot_veksklad
+
+    locale.setlocale(category=locale.LC_NUMERIC, locale='sk_SK.UTF-8')
+    import marimo as mo
 
 
 @app.cell
 def _():
-    import marimo as mo
-    return (mo,)
-
-
-@app.cell
-def _(mo):
     abbrev = {'Slovensko': 'SK', 'Poľsko': 'PL', 'Česko': 'CZ', 'Maďarsko': 'HU'}
     countries_choice = mo.ui.dropdown(options=abbrev, value='Slovensko', label='Výber krajiny: ')
     valmap_choice = mo.ui.radio(options={'Nezamestnanosť (%)':'perc_unemp', 'Hustota obyvateľstva':'population_density'}, 
@@ -46,7 +41,7 @@ def _(mo):
 
 
 @app.cell
-def _(countries_choice, mo, plot_map, valmap_choice):
+def _(countries_choice, valmap_choice):
     _cstr = countries_choice.value
     _vstr = valmap_choice.value
     _fig = plot_map(_cstr, _vstr)
@@ -55,24 +50,25 @@ def _(countries_choice, mo, plot_map, valmap_choice):
 
 
 @app.cell
-def _(countries_choice, h_pars, mo):
+def _(countries_choice):
     _c_regs = h_pars[countries_choice.value]
     _regions = {k:v for k,v in zip(_c_regs['name'], _c_regs['lau'])}
     regions_choice = mo.ui.dropdown(options=_regions, allow_select_none=False, searchable=True, 
-                                    value=_c_regs['name'][0], label="Výber regiónu: ") 
-    return (regions_choice,)
+                                    value=_c_regs['name'][0], label="Výber regiónu: ")
+    who_choice = mo.ui.radio(options={'Celkovo':'summary', 'Ženy, muži':'bygender'}, value='Celkovo')
+    return regions_choice, who_choice
 
 
 @app.cell
-def _(countries_choice, mo, plot_uhist, regions_choice):
-    _r_hist = plot_uhist(countries_choice.value, regions_choice.value)
+def _(countries_choice, regions_choice, who_choice):
+    _r_hist = plot_uhist(countries_choice.value, regions_choice.value, who_choice.value)
     _nadpis = mo.md(f'<center><h3>História nezamestnanosti</h3></center>')
-    tab_history = mo.vstack([_nadpis, mo.hstack([countries_choice, regions_choice],justify='center', gap=5), _r_hist])
+    tab_history = mo.vstack([_nadpis, mo.hstack([countries_choice, regions_choice, who_choice],justify='center', gap=5), _r_hist])
     return (tab_history,)
 
 
 @app.cell
-def _(countries_choice, mo, plot_phist, regions_choice):
+def _(countries_choice, regions_choice):
     _p_hist, _all_df = plot_phist(countries_choice.value, regions_choice.value)
     _nadpis = mo.md(f'<center><h3>Vývoj populácie</h3></center>')
     tab_pop = mo.vstack([_nadpis, mo.hstack([countries_choice, regions_choice], justify='center', gap=5), _p_hist])
@@ -80,7 +76,7 @@ def _(countries_choice, mo, plot_phist, regions_choice):
 
 
 @app.cell
-def _(h_pars, mo, pickle):
+def _():
     sk_unpic = pickle.load(open('sk_data.pickle','rb'))
     _c_regs = h_pars['SK']
     _regions = {k:v for k,v in zip(_c_regs['name'], _c_regs['lau'])}
@@ -89,15 +85,15 @@ def _(h_pars, mo, pickle):
 
 
 @app.cell
-def _(mo, sk_reg_choice, sk_unpic):
+def _(sk_reg_choice, sk_unpic):
     data_reg = sk_unpic[sk_reg_choice.value]
     years = sorted(list(data_reg.keys()))
-    reg_slider = mo.ui.slider(start=years[0], stop=years[-1], step=1, label='Rok: ', show_value=False,debounce=True, value=years[0])
+    reg_slider = mo.ui.slider(start=years[0], stop=years[-1], step=1, label='Rok: ', show_value=False, value=years[0])
     return data_reg, reg_slider
 
 
 @app.cell
-def _(data_reg, mo, plot_veksklad, reg_slider, sk_reg_choice):
+def _(data_reg, reg_slider, sk_reg_choice):
     _reg_valstr = mo.md(f" {reg_slider.value}")
     p_plot = plot_veksklad(data_reg, reg_slider.value)
     _nadpis = mo.md(f'<center><h3>Veková skladba obyvateľstva Slovenska</h3></center>')
@@ -105,14 +101,21 @@ def _(data_reg, mo, plot_veksklad, reg_slider, sk_reg_choice):
     return (tab_veksklad,)
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md("""# Facina""")
+    return
+
+
 @app.cell
-def _(mo, tab_history, tab_map, tab_pop, tab_veksklad):
-    tabs = mo.ui.tabs({"Nezamestnanosť na mape": tab_map, "História po regiónoch": tab_history, 'Demografický vývoj po regiónoch': tab_pop, "Veková skladba, regiony SK": tab_veksklad})
+def _(tab_history, tab_map, tab_pop, tab_veksklad):
+    tabs = mo.ui.tabs({"Nezamestnanosť na mape": tab_map, "História po regiónoch": tab_history, 
+                       'Demografický vývoj po regiónoch': tab_pop, "Veková skladba, regiony SK": tab_veksklad})
     return (tabs,)
 
 
 @app.cell
-def _(mo):
+def _():
     nadpis = mo.md(
         """
         ## Nezamestnanosť v krajinách V4
@@ -123,7 +126,7 @@ def _(mo):
 
 
 @app.cell
-def _(mo, nadpis, tabs):
+def _(nadpis, tabs):
     app = mo.vstack([nadpis, tabs],gap=2.5)
     app
     return

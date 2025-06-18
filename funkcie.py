@@ -1,10 +1,8 @@
-import marimo as mo
 import json
 import geopandas as gp
 import polars as pl
 import plotly.express as px
 import numpy as np
-
 
 geo = json.load(open('converted_simp2.geojson','r'))
 
@@ -35,8 +33,7 @@ def get_country_unemp_history(cstr):
         return   
     unemp_hist = pl.read_csv('lau1-history-iz.csv', 
     columns=["period", "lau", "name", "registered_unemployed",
-             "registered_unemployed_females", "Y15-64", "Y15-64-females",
-             "TOTAL"])
+             "registered_unemployed_females", "Y15-64", "Y15-64-females"])
     unemp_hist = unemp_hist.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))         
     unemp_hc = unemp_hist.filter(pl.col('lau').str.starts_with(cstr))
     return unemp_hc
@@ -77,14 +74,26 @@ def plot_map(cstr, column='perc_unemp'):
         "Hodnota: %{customdata[1]}"))
     return fig
 
-def plot_uhist(cstr, rstr):
+def plot_uhist(cstr, rstr, kto):
     c_hist = h_pars[cstr]
     r_hist = c_hist.filter(pl.col('lau') == rstr)
-    r_hist = r_hist.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
-    r_hist = r_hist.sort(by='period')
-    ugr = px.line(r_hist, x='period', y='perc_unemp', markers=False, 
-                  labels={'perc_unemp': 'Nezamestnanosť %', 'period': 'Obdobie'},
-                  width=900, height=450)
+    
+    if kto == 'summary':
+        r_hist = r_hist.sort(by='period')
+        ugr = px.line(r_hist, x='period', y='perc_unemp', markers=False, 
+                    labels={'perc_unemp': 'Nezamestnanosť %', 'period': 'Obdobie'},
+                    width=900, height=450)
+    else:                
+        r_hist = r_hist.with_columns(ženy = (100 * pl.col('registered_unemployed_females') 
+                                        / pl.col('Y15-64')).round(2))
+        r_hist = r_hist.with_columns(muži = (pl.col('perc_unemp') - pl.col('ženy')).round(2))
+        r_hist = r_hist.sort(by='period')
+        if cstr == 'PL':
+            r_hist = r_hist.filter(pl.col('registered_unemployed_females').is_not_null())
+        r_hist = r_hist.sort(by='period')    
+        ugr = px.line(r_hist, x='period', y=['muži', 'ženy'], markers=False, 
+                      labels={'value': 'Nezamestnanosť %', 'period': 'Obdobie', 'variable': 'Premenná'},
+                      width=900, height=450)
     ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
     return ugr
 
