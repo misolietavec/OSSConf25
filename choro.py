@@ -27,7 +27,6 @@ with app.setup:
     from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars, plot_veksklad
     import plotly.express as px
 
-    locale.setlocale(category=locale.LC_NUMERIC, locale='sk_SK.UTF-8')
     import marimo as mo
 
 
@@ -99,12 +98,6 @@ def _(data_reg, reg_slider, sk_reg_choice):
     _nadpis = mo.md(f'<center><h3>Veková skladba obyvateľstva Slovenska</h3></center>')
     tab_veksklad = mo.vstack([_nadpis, mo.hstack([sk_reg_choice, reg_slider, _reg_valstr],justify='center', gap=5), p_plot])
     return (tab_veksklad,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md("""# Facina""")
-    return
 
 
 @app.cell

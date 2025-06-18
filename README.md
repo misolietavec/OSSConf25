@@ -8,7 +8,7 @@ visualising unemployment and population data in regions of V4 countries.
 
 There are two marimo notebooks:
 - ```choro.py``` maps and line graphs for LAU1 datasets
-- ```choro_lite.py``` webassambly version of ```choro.py```
+- ```choro_lite.py``` simple webassambly version of ```choro.py```
 
 and the python file ```funkcie.py ``` with several helper functions used in notebooks.
 
