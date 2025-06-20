@@ -44,7 +44,7 @@ def _():
 
 @app.cell
 def _(data_path, gp, json, np, pl):
-    geo = json.load(open(f'{data_path}/converted_simp2.geojson','r'))
+    geo = json.load(open(str(mo.notebook_location() / "public" / "converted_simp2.geojson"),'r'))
 
     unemp = gp.read_file(f'{data_path}/converted_simp2.geojson', read_geometry=False)
     unemp = unemp[['lau', 'name', 'registered_unemployed', 'Y15-64','population_density']]
