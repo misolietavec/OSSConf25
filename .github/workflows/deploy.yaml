@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     paths:
-      - choro.py
+      - choro_all.py
       - .github/workflows/deploy.yaml
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         run: uv add marimo
 
       - name: Export marimo notebook
-        run: uv run marimo export html-wasm choro.py --output build --sandbox
+        run: uv run marimo export html-wasm choro_all.py --output build --sandbox
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
