@@ -6,6 +6,7 @@ on:
     paths:
       - choro_all.py
       - .github/workflows/deploy.yaml
+      - public/
 
 jobs:
   build:
