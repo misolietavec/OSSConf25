@@ -6,8 +6,11 @@ on:
     paths:
       - choro_all.py
       - .github/workflows/deploy.yaml
-      - public/
-
+      - public/converted_simp2.geojson
+      - public/lau1-population-iz.csv
+      - public/lau1-history-iz.csv
+      - public/sk_data.pickle
+      
 jobs:
   build:
     runs-on: ubuntu-latest
