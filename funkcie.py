@@ -3,10 +3,12 @@ import geopandas as gp
 import polars as pl
 import plotly.express as px
 import numpy as np
+import marimo as mo
 
-geo = json.load(open('converted_simp2.geojson','r'))
+data_path = str(mo.notebook_location() / "public") 
+geo = json.load(open(f'{data_path}/converted_simp2.geojson','r'))
 
-unemp = gp.read_file('converted_simp2.geojson', read_geometry=False)
+unemp = gp.read_file(f'{data_path}/converted_simp2.geojson', read_geometry=False)
 unemp = unemp[['lau', 'name', 'registered_unemployed', 'Y15-64','population_density']]
 unemp = pl.from_pandas(unemp)
 unemp = unemp.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
@@ -31,7 +33,7 @@ u_pars = {k: get_country_mapdata(k) for k in g_pars.keys()}
 def get_country_unemp_history(cstr):
     if not cstr in g_pars.keys():
         return   
-    unemp_hist = pl.read_csv('lau1-history-iz.csv', 
+    unemp_hist = pl.read_csv(f'{data_path}/lau1-history-iz.csv', 
     columns=["period", "lau", "name", "registered_unemployed",
              "registered_unemployed_females", "Y15-64", "Y15-64-females"])
     unemp_hist = unemp_hist.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))         
@@ -44,7 +46,7 @@ h_pars = {k: get_country_unemp_history(k) for k in g_pars.keys()}
 def get_country_pop_history(cstr):
     if not cstr in g_pars.keys():
         return   
-    pop_hist = pl.read_csv('lau1-population-iz.csv', 
+    pop_hist = pl.read_csv(f'{data_path}/lau1-population-iz.csv', 
                             columns=["period", "lau", "name", "gender", "TOTAL"])
     pop_hc = pop_hist.filter(pl.col('lau').str.starts_with(cstr))
     return pop_hc

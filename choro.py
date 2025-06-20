@@ -24,7 +24,7 @@ app = marimo.App(
 with app.setup:
     import locale
     import pickle
-    from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars, plot_veksklad
+    from funkcie import plot_map, plot_uhist, h_pars, plot_phist, p_pars, plot_veksklad, data_path
     import plotly.express as px
 
     import marimo as mo
@@ -76,7 +76,7 @@ def _(countries_choice, regions_choice):
 
 @app.cell
 def _():
-    sk_unpic = pickle.load(open('sk_data.pickle','rb'))
+    sk_unpic = pickle.load(open(f'{data_path}/sk_data.pickle','rb'))
     _c_regs = h_pars['SK']
     _regions = {k:v for k,v in zip(_c_regs['name'], _c_regs['lau'])}
     sk_reg_choice = mo.ui.dropdown(options=_regions, allow_select_none=False, searchable=True, value=_c_regs['name'][0], label="Výber regiónu, SK: ")

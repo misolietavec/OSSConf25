@@ -37,9 +37,16 @@ def _():
     import polars as pl
     import numpy as np
 
-    geo = json.load(open('converted_simp2.geojson','r'))
+    data_path = str(mo.notebook_location() / "public") 
+    data_path
+    return data_path, gp, json, np, pl
 
-    unemp = gp.read_file('converted_simp2.geojson', read_geometry=False)
+
+@app.cell
+def _(data_path, gp, json, np, pl):
+    geo = json.load(open(f'{data_path}/converted_simp2.geojson','r'))
+
+    unemp = gp.read_file(f'{data_path}/converted_simp2.geojson', read_geometry=False)
     unemp = unemp[['lau', 'name', 'registered_unemployed', 'Y15-64','population_density']]
     unemp = pl.from_pandas(unemp)
     unemp = unemp.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
@@ -64,7 +71,7 @@ def _():
     def get_country_unemp_history(cstr):
         if not cstr in g_pars.keys():
             return   
-        unemp_hist = pl.read_csv('lau1-history-iz.csv', 
+        unemp_hist = pl.read_csv(f'{data_path}/lau1-history-iz.csv', 
         columns=["period", "lau", "name", "registered_unemployed",
                  "registered_unemployed_females", "Y15-64", "Y15-64-females"])
         unemp_hist = unemp_hist.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))         
@@ -77,14 +84,14 @@ def _():
     def get_country_pop_history(cstr):
         if not cstr in g_pars.keys():
             return   
-        pop_hist = pl.read_csv('lau1-population-iz.csv', 
+        pop_hist = pl.read_csv(f'{data_path}/lau1-population-iz.csv', 
                                 columns=["period", "lau", "name", "gender", "TOTAL"])
         pop_hc = pop_hist.filter(pl.col('lau').str.starts_with(cstr))
         return pop_hc
 
 
     p_pars = {k: get_country_pop_history(k) for k in g_pars.keys()}
-    
+
 
     def plot_map(cstr, column='perc_unemp'):
         geo_c, unemp_c = u_pars[cstr]
@@ -110,7 +117,7 @@ def _():
     def plot_uhist(cstr, rstr, kto):
         c_hist = h_pars[cstr]
         r_hist = c_hist.filter(pl.col('lau') == rstr)
-    
+
         if kto == 'summary':
             r_hist = r_hist.sort(by='period')
             ugr = px.line(r_hist, x='period', y='perc_unemp', markers=False, 
@@ -205,8 +212,8 @@ def _(countries_choice, plot_phist, regions_choice):
 
 
 @app.cell
-def _(h_pars):
-    sk_unpic = pickle.load(open('sk_data.pickle','rb'))
+def _(data_path, h_pars):
+    sk_unpic = pickle.load(open(f'{data_path}/sk_data.pickle','rb'))
     _c_regs = h_pars['SK']
     _regions = {k:v for k,v in zip(_c_regs['name'], _c_regs['lau'])}
     sk_reg_choice = mo.ui.dropdown(options=_regions, allow_select_none=False, searchable=True, value=_c_regs['name'][0], label="Výber regiónu, SK: ")
