@@ -38,7 +38,6 @@ def _():
     import numpy as np
 
     data_path = str(mo.notebook_location() / "public") 
-    data_path
     return data_path, gp, json, np, pl
 
 
