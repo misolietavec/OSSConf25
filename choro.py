@@ -18,7 +18,6 @@ __generated_with = "0.14.0"
 app = marimo.App(
     width="medium",
     app_title="Nezamestnanosť V4",
-    layout_file="layouts/choro.slides.json",
     sql_output="native",
 )
 
