@@ -14,10 +14,11 @@
 
 import marimo
 
-__generated_with = "0.13.15"
+__generated_with = "0.14.0"
 app = marimo.App(
     width="medium",
     app_title="Nezamestnanosť V4",
+    layout_file="layouts/choro.slides.json",
     sql_output="native",
 )
 
@@ -113,6 +114,7 @@ def _():
         """
         ## Nezamestnanosť v krajinách V4
         ### Aktuálne dáta po regiónoch, história nezamestnanosti, vývoj populácie, veková skladba.
+        #### Zdrojáky aplikácie nájdete [na githube](https://github.com/misolietavec/OSSConf25)
         """
     )
     return (nadpis,)
