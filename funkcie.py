@@ -3,12 +3,11 @@ import geopandas as gp
 import polars as pl
 import plotly.express as px
 import numpy as np
-import marimo as mo
 
-data_path = str(mo.notebook_location() / "public") 
-geo = json.load(open(f'{data_path}/converted_simp2.geojson','r'))
+ 
+geo = json.load(open('public/converted_simp2.geojson','r'))
 
-unemp = gp.read_file(f'{data_path}/converted_simp2.geojson', read_geometry=False)
+unemp = gp.read_file('public/converted_simp2.geojson', read_geometry=False)
 unemp = unemp[['lau', 'name', 'registered_unemployed', 'Y15-64','population_density']]
 unemp = pl.from_pandas(unemp)
 unemp = unemp.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))
@@ -18,6 +17,13 @@ g_pars = {'SK': {'center': {"lon": 19.3, "lat": 48.7}, 'zoom': 6, 'w': 750, 'h':
           'PL': {'center': {"lon": 18.9, "lat": 51.9}, 'zoom': 5, 'w': 700, 'h': 500},
           'CZ': {'center': {"lon": 15.5, "lat": 49.7}, 'zoom': 6, 'w': 760, 'h': 500},
          }
+
+def regions(cstr):
+    c_regdf = unemp.filter(pl.col('lau').str.starts_with(cstr)).select(['name', 'lau'])
+    c_regs = {k:v for k,v in zip(c_regdf['name'], c_regdf['lau'])}
+    return c_regs
+    
+c_regions = {c: regions(c) for c in g_pars} 
 
 def get_country_mapdata(cstr):
     if not cstr in g_pars.keys():
@@ -33,7 +39,7 @@ u_pars = {k: get_country_mapdata(k) for k in g_pars.keys()}
 def get_country_unemp_history(cstr):
     if not cstr in g_pars.keys():
         return   
-    unemp_hist = pl.read_csv(f'{data_path}/lau1-history-iz.csv', 
+    unemp_hist = pl.read_csv('public/lau1-history-iz.csv', 
     columns=["period", "lau", "name", "registered_unemployed",
              "registered_unemployed_females", "Y15-64", "Y15-64-females"])
     unemp_hist = unemp_hist.with_columns((100 * pl.col('registered_unemployed') / pl.col('Y15-64')).alias('perc_unemp').round(2))         
@@ -46,7 +52,7 @@ h_pars = {k: get_country_unemp_history(k) for k in g_pars.keys()}
 def get_country_pop_history(cstr):
     if not cstr in g_pars.keys():
         return   
-    pop_hist = pl.read_csv(f'{data_path}/lau1-population-iz.csv', 
+    pop_hist = pl.read_csv('public/lau1-population-iz.csv', 
                             columns=["period", "lau", "name", "gender", "TOTAL"])
     pop_hc = pop_hist.filter(pl.col('lau').str.starts_with(cstr))
     return pop_hc
@@ -97,6 +103,7 @@ def plot_uhist(cstr, rstr, kto):
                       labels={'value': 'Nezamestnanosť %', 'period': 'Obdobie', 'variable': 'Premenná'},
                       width=900, height=450)
     ugr.update_xaxes({"tickvals": r_hist["period"].str.head(4), "tickangle": 45})
+    ugr.update_layout(modebar_remove=['zoom', 'pan', 'lasso', 'select', 'toimage', ])
     return ugr
 
 
@@ -117,7 +124,7 @@ def plot_phist(cstr, rstr):
     ugr = px.line(all_df, x='period', y=['muži', 'ženy'], markers=False, 
                   labels = {'period': 'Obdobie', 'value': 'Počet', 'variable': 'Premenná'},
                   width=900, height=450)
-    return ugr, all_df
+    return ugr #, all_df
 
 def plot_veksklad(data_reg, year):
     r_data = data_reg[year].rename({'ages': 'Vek', 'males': "muži", 'femes': "ženy"})
@@ -125,3 +132,22 @@ def plot_veksklad(data_reg, year):
                         labels = {'value': 'Počet', 'variable': 'Premenná'},
                         width=900, height=450)
     return act_graph
+
+def vek_anim(data_reg):
+    lf = 20  # len(data_reg[1996]['ages']) napr.
+    years, ages, males, females = [], [], [], []
+    for year in data_reg.keys():
+        dfy = data_reg[year]
+        years.extend(lf * [year])
+        ages.extend(dfy['ages'])
+        males.extend(dfy['males'])
+        females.extend(dfy['femes'])
+    ylim = [0.98 * min(min(females), min(males)), 1.02 * max(max(females), max(males))]
+    df_vek = pl.DataFrame({'Rok': years, 'Vek': ages, 'muži': males, 'ženy': females})
+    gr_vek = px.bar(df_vek, x='Vek', y=['muži', 'ženy'], #markers=False, 
+                    width=900, height=450, barmode='group',
+                    animation_frame='Rok', labels = {'value': 'Počet', 'variable': 'Premenná'})
+    gr_vek.add_vline(x=15)
+    gr_vek.add_vline(x=64)                
+    gr_vek.update_yaxes(range = ylim)                 
+    return gr_vek
